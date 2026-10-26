@@ -130,6 +130,7 @@ export default function Home({ go, showToast, reasonsFound, memoryUnlocked, lett
           </button>
           <span className="inline-flex items-center gap-2 text-sm text-[#cdbcff]"><Armchair size={16} /> Everything here is replayable, Doll. No timers, no pressure.</span>
         </div>
+        <p className="mt-8 text-center font-mono text-[10px] uppercase tracking-[0.25em] text-[#8f83b8]/70">🎵 background music: “Lovely” · via Chosic · picked by Kulfi, for Doll</p>
       </motion.section>
     </motion.main>
   )
