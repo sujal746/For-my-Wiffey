@@ -1,6 +1,9 @@
 name: Fetch music file (one-time)
 
 on:
+  push:
+    branches: ["arena/76ef4c77-happy-20th-birthday"]
+    paths: [".github/workflows/fetch-music.yml", "music-fetch-trigger.txt"]
   workflow_dispatch:
 
 permissions:
