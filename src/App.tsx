@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import { Heart, Volume2, VolumeX } from 'lucide-react'
+import { Heart, Music, Volume2, VolumeX } from 'lucide-react'
 import Starfield, { Nebula } from './components/Starfield'
 import { Toast } from './components/ui'
 import { BootScene, TitleScene } from './scenes/Boot'
@@ -10,7 +10,7 @@ import Reasons from './scenes/Reasons'
 import Memory from './scenes/Memory'
 import Secret from './scenes/Secret'
 import Ending from './scenes/Ending'
-import { setSoundEnabled } from './lib/sound'
+import { setSoundEnabled, startMusic, stopMusic } from './lib/sound'
 
 export type Scene = 'boot' | 'title' | 'home' | 'hug' | 'letter' | 'special' | 'peaceful' | 'reasons' | 'memory' | 'secret' | 'ending'
 
@@ -22,10 +22,11 @@ type Progress = {
   letterRead: boolean
   hugged: boolean
   sound: boolean
+  music: boolean
 }
 
 const KEY = 'dollexe-progress-v1'
-const DEFAULTS: Progress = { booted: false, visited: [], reasons: [], memoryUnlocked: false, letterRead: false, hugged: false, sound: false }
+const DEFAULTS: Progress = { booted: false, visited: [], reasons: [], memoryUnlocked: false, letterRead: false, hugged: false, sound: false, music: true }
 
 function load(): Progress {
   try {
@@ -50,6 +51,16 @@ export default function App() {
 
   useEffect(() => { try { localStorage.setItem(KEY, JSON.stringify(progress)) } catch { /* private mode */ } }, [progress])
   useEffect(() => { setSoundEnabled(progress.sound) }, [progress.sound])
+
+  // Peaceful music: browsers only allow audio after a gesture, so it fades in
+  // on her very first tap/click anywhere (usually the ENTER button), if music is on.
+  useEffect(() => {
+    if (!progress.music) { stopMusic(); return }
+    const kick = () => startMusic()
+    window.addEventListener('pointerdown', kick)
+    window.addEventListener('keydown', kick)
+    return () => { window.removeEventListener('pointerdown', kick); window.removeEventListener('keydown', kick) }
+  }, [progress.music])
 
   const patch = useCallback((p: Partial<Progress>) => setProgress(prev => ({ ...prev, ...p })), [])
   const showToast = useCallback((m: string) => setToast(m), [])
@@ -89,12 +100,28 @@ export default function App() {
           className="inline-flex min-h-[40px] cursor-pointer items-center gap-2 rounded-full px-2 py-1 font-mono text-sm font-bold tracking-widest text-[#ffdbe8]">
           <Heart size={15} fill="#ff6fa5" className="text-[#ff6fa5]" /> DOLL.EXE
         </button>
-        <button type="button"
-          onClick={() => { const next = !progress.sound; patch({ sound: next }); if (next) showToast('Sound on. Tiny sparkles incoming. 🔊') }}
-          aria-pressed={progress.sound} aria-label={progress.sound ? 'Mute sounds' : 'Turn sound on'}
-          className="glass btn-glow grid h-11 w-11 cursor-pointer place-items-center rounded-full text-[#ffdbe8]">
-          {progress.sound ? <Volume2 size={19} /> : <VolumeX size={19} />}
-        </button>
+        <span className="flex items-center gap-2">
+          <button type="button"
+            onClick={() => {
+              const next = !progress.music; patch({ music: next })
+              if (next) { startMusic(); showToast('Music on. Something soft, just for you, Doll. 🎵') } else stopMusic()
+            }}
+            aria-pressed={progress.music} aria-label={progress.music ? 'Turn the peaceful music off' : 'Turn the peaceful music on'}
+            title={progress.music ? 'Music: on' : 'Music: off'}
+            className={`glass btn-glow relative grid h-11 w-11 cursor-pointer place-items-center rounded-full ${progress.music ? 'text-[#ffb7d1]' : 'text-[#8f83b8]'}`}>
+            <Music size={19} />
+            {progress.music
+              ? <span aria-hidden className="anim-pulse-warm absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#ff6fa5] shadow-[0_0_8px_rgba(255,111,165,.9)]" style={{ animation: 'pulse-warm 1.8s ease-in-out infinite' }} />
+              : <span aria-hidden className="absolute h-[2px] w-6 rotate-45 rounded bg-current" />}
+          </button>
+          <button type="button"
+            onClick={() => { const next = !progress.sound; patch({ sound: next }); if (next) showToast('Sound effects on. Tiny sparkles incoming. 🔊') }}
+            aria-pressed={progress.sound} aria-label={progress.sound ? 'Mute sound effects' : 'Turn sound effects on'}
+            title={progress.sound ? 'Sound effects: on' : 'Sound effects: off'}
+            className="glass btn-glow grid h-11 w-11 cursor-pointer place-items-center rounded-full text-[#ffdbe8]">
+            {progress.sound ? <Volume2 size={19} /> : <VolumeX size={19} />}
+          </button>
+        </span>
       </header>
 
       <AnimatePresence mode="wait">
